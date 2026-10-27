@@ -1,0 +1,14 @@
+node_modules
+dist
+generated
+.next
+.next-hdd
+.turbo
+coverage
+.env
+.env.local
+*.log
+uploads/**
+!uploads/public/.gitkeep
+!uploads/private/.gitkeep
+.DS_Store

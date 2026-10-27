@@ -1,0 +1,9 @@
+{
+  "name": "chalok",
+  "private": true,
+  "scripts": {
+    "db": "docker compose up -d",
+    "setup": "npm install --prefix backend && npm install --prefix web && npm install --prefix admin && npm run prisma:generate --prefix backend && npm run db:push --prefix backend && npm run seed --prefix backend",
+    "dev": "sh scripts/dev.sh"
+  }
+}

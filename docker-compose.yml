@@ -1,0 +1,20 @@
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: chalok
+      POSTGRES_PASSWORD: chalok
+      POSTGRES_DB: chalok
+    ports:
+      - "5438:5432"
+    volumes:
+      - chalok_pg:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U chalok -d chalok"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+volumes:
+  chalok_pg:

@@ -1,0 +1,537 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  SUPER_ADMIN
+  ADMIN
+  CONTENT_MANAGER
+  SUPPORT
+  DRIVER
+  EMPLOYER
+}
+
+enum EmployerType {
+  INDIVIDUAL
+  COMPANY
+}
+
+enum JobType {
+  FULL_TIME
+  PART_TIME
+  CONTRACT
+}
+
+enum VehicleType {
+  PRIVATE_CAR
+  MICROBUS
+  PICKUP
+  COVERED_VAN
+  TRUCK
+  BUS
+  MOTORCYCLE
+  CNG
+  AMBULANCE
+}
+
+enum LicenseClass {
+  NON_PROFESSIONAL_LIGHT
+  PROFESSIONAL_LIGHT
+  MEDIUM
+  HEAVY
+  MOTORCYCLE
+  PSV
+}
+
+enum DrivingCategory {
+  RESIDENTIAL
+  OFFICE
+  PERSONAL
+  COMMERCIAL
+}
+
+enum JobStatus {
+  DRAFT
+  PENDING_APPROVAL
+  ACTIVE
+  REJECTED
+  CLOSED
+  EXPIRED
+}
+
+enum ApplicationStatus {
+  SUBMITTED
+  UNDER_REVIEW
+  INTERVIEW
+  HIRED
+  REJECTED
+  WITHDRAWN
+}
+
+enum VerificationStatus {
+  UNVERIFIED
+  PENDING
+  VERIFIED
+  REJECTED
+}
+
+enum ContactRequestStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+}
+
+enum ComplaintStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+  DISMISSED
+}
+
+enum ComplaintType {
+  FAKE_JOB
+  FRAUD
+  HARASSMENT
+  FAKE_PROFILE
+  OTHER
+}
+
+enum NotificationChannel {
+  IN_APP
+  EMAIL
+  SMS
+}
+
+enum AreaKind {
+  UPAZILA
+  THANA
+}
+
+enum DocumentKind {
+  PROFILE_PHOTO
+  LICENSE
+  NID
+  EXPERIENCE_PROOF
+  OTHER
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  CANCELLED
+}
+
+enum PlanInterval {
+  ONE_TIME
+  MONTHLY
+  YEARLY
+}
+
+model User {
+  id                  String    @id @default(cuid())
+  name                String?
+  email               String?   @unique
+  phone               String    @unique
+  passwordHash        String
+  role                Role
+  isActive            Boolean   @default(true)
+  isBlocked           Boolean   @default(false)
+  blockReason         String?
+  phoneVerified       Boolean   @default(false)
+  emailVerified       Boolean   @default(false)
+  language            String    @default("bn")
+  deletionRequestedAt DateTime?
+  lastLoginAt         DateTime?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  driver          DriverProfile?
+  employer        EmployerProfile?
+  notifications   Notification[]
+  auditLogs       AuditLog[]       @relation("AuditActor")
+  contactSent     ContactRequest[] @relation("ContactFrom")
+  contactReceived ContactRequest[] @relation("ContactTo")
+  complaintsFiled Complaint[]      @relation("ComplaintReporter")
+  documents       Document[]
+  otpCodes        OtpCode[]
+  refreshTokens   RefreshToken[]
+  payments        Payment[]
+
+  @@index([role])
+  @@index([isBlocked])
+}
+
+model RefreshToken {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+}
+
+model OtpCode {
+  id        String   @id @default(cuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  phone     String
+  codeHash  String
+  purpose   String
+  attempts  Int      @default(0)
+  expiresAt DateTime
+  consumed  Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([phone, purpose])
+}
+
+model Division {
+  id        String     @id @default(cuid())
+  nameEn    String
+  nameBn    String
+  code      String     @unique
+  sortOrder Int
+  districts District[]
+}
+
+model District {
+  id            String    @id @default(cuid())
+  divisionId    String
+  division      Division  @relation(fields: [divisionId], references: [id])
+  nameEn        String
+  nameBn        String
+  code          String    @unique
+  serviceActive Boolean   @default(false)
+  launchedAt    DateTime?
+  areas         Area[]
+  drivers       DriverProfile[]
+  workDrivers   DriverProfile[]   @relation("WorkDistrict")
+  employers     EmployerProfile[]
+  jobs          JobPost[]
+
+  @@index([serviceActive])
+  @@index([divisionId])
+}
+
+model Area {
+  id         String   @id @default(cuid())
+  districtId String
+  district   District @relation(fields: [districtId], references: [id], onDelete: Cascade)
+  nameEn     String
+  nameBn     String
+  kind       AreaKind
+  drivers    DriverProfile[]
+  jobs       JobPost[]
+
+  @@unique([districtId, nameEn])
+}
+
+model DriverProfile {
+  id                  String             @id @default(cuid())
+  userId              String             @unique
+  user                User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  fullName            String
+  photoUrl            String?
+  bio                 String?
+  addressLine         String?
+  districtId          String
+  district            District           @relation(fields: [districtId], references: [id])
+  areaId              String?
+  area                Area?              @relation(fields: [areaId], references: [id])
+  workDistrictId      String?
+  workDistrict        District?          @relation("WorkDistrict", fields: [workDistrictId], references: [id])
+  licenseClass        LicenseClass?
+  licenseNumber       String?
+  licenseExpiry       DateTime?
+  experienceYears     Int                @default(0)
+  expectedSalaryMin   Int?
+  expectedSalaryMax   Int?
+  jobPreference       JobType?
+  drivingCategories   DrivingCategory[]
+  isJobSeeker         Boolean            @default(true)
+  isAvailable         Boolean            @default(true)
+  isProfileActive     Boolean            @default(true)
+  featured            Boolean            @default(false)
+  verificationStatus  VerificationStatus @default(UNVERIFIED)
+  verificationNote    String?
+  verifiedAt          DateTime?
+  educationLevel      String?
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
+
+  vehicles        DriverVehicle[]
+  experiences     WorkExperience[]
+  references      DriverReference[]
+  applications    Application[]
+  contactRequests ContactRequest[]
+
+  @@index([districtId, isProfileActive, isAvailable])
+  @@index([verificationStatus])
+  @@index([experienceYears])
+}
+
+model DriverVehicle {
+  id       String        @id @default(cuid())
+  driverId String
+  driver   DriverProfile @relation(fields: [driverId], references: [id], onDelete: Cascade)
+  type     VehicleType
+
+  @@unique([driverId, type])
+}
+
+model WorkExperience {
+  id          String           @id @default(cuid())
+  driverId    String
+  driver      DriverProfile    @relation(fields: [driverId], references: [id], onDelete: Cascade)
+  employer    String
+  role        String
+  vehicleType VehicleType?
+  category    DrivingCategory?
+  startYear   Int
+  endYear     Int?
+  description String?
+}
+
+model DriverReference {
+  id       String        @id @default(cuid())
+  driverId String
+  driver   DriverProfile @relation(fields: [driverId], references: [id], onDelete: Cascade)
+  name     String
+  phone    String?
+  relation String?
+  note     String?
+}
+
+model EmployerProfile {
+  id            String       @id @default(cuid())
+  userId        String       @unique
+  user          User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type          EmployerType
+  displayName   String
+  companyName   String?
+  logoUrl       String?
+  contactPerson String?
+  about         String?
+  addressLine   String?
+  districtId    String?
+  district      District?    @relation(fields: [districtId], references: [id])
+  website       String?
+  isVerified    Boolean      @default(false)
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  jobs          JobPost[]
+  subscriptions Subscription[]
+}
+
+model JobPost {
+  id                 String           @id @default(cuid())
+  slug               String           @unique
+  employerId         String
+  employer           EmployerProfile  @relation(fields: [employerId], references: [id], onDelete: Cascade)
+  title              String
+  description        String
+  districtId         String
+  district           District         @relation(fields: [districtId], references: [id])
+  areaId             String?
+  area               Area?            @relation(fields: [areaId], references: [id])
+  areaText           String?
+  vehicleType        VehicleType
+  salaryMin          Int?
+  salaryMax          Int?
+  salaryNegotiable   Boolean          @default(false)
+  workingHours       String?
+  holidays           String?
+  experienceRequired Int              @default(0)
+  licenseClass       LicenseClass?
+  jobType            JobType
+  drivingCategory    DrivingCategory?
+  deadline           DateTime?
+  applyInstructions  String?
+  showPhone          Boolean          @default(false)
+  featured           Boolean          @default(false)
+  status             JobStatus        @default(PENDING_APPROVAL)
+  rejectionReason    String?
+  approvedAt         DateTime?
+  approvedById       String?
+  closedAt           DateTime?
+  expiresAt          DateTime?
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+  applications       Application[]
+
+  @@index([status, districtId])
+  @@index([vehicleType, jobType])
+  @@index([deadline])
+}
+
+model Application {
+  id        String            @id @default(cuid())
+  jobId     String
+  job       JobPost           @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  driverId  String
+  driver    DriverProfile     @relation(fields: [driverId], references: [id], onDelete: Cascade)
+  coverNote String?
+  status    ApplicationStatus @default(SUBMITTED)
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+  history   ApplicationEvent[]
+
+  @@unique([jobId, driverId])
+  @@index([driverId])
+  @@index([status])
+}
+
+model ApplicationEvent {
+  id            String            @id @default(cuid())
+  applicationId String
+  application   Application       @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  status        ApplicationStatus
+  note          String?
+  actorId       String?
+  createdAt     DateTime          @default(now())
+}
+
+model ContactRequest {
+  id         String               @id @default(cuid())
+  fromUserId String
+  fromUser   User                 @relation("ContactFrom", fields: [fromUserId], references: [id], onDelete: Cascade)
+  driverId   String
+  driver     DriverProfile        @relation(fields: [driverId], references: [id], onDelete: Cascade)
+  toUserId   String
+  toUser     User                 @relation("ContactTo", fields: [toUserId], references: [id], onDelete: Cascade)
+  message    String?
+  status     ContactRequestStatus @default(PENDING)
+  createdAt  DateTime             @default(now())
+  updatedAt  DateTime             @updatedAt
+
+  @@index([toUserId, status])
+  @@index([fromUserId])
+}
+
+model Complaint {
+  id            String          @id @default(cuid())
+  reporterId    String
+  reporter      User            @relation("ComplaintReporter", fields: [reporterId], references: [id])
+  againstUserId String?
+  againstJobId  String?
+  type          ComplaintType
+  description   String
+  status        ComplaintStatus @default(OPEN)
+  adminNote     String?
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  @@index([status])
+}
+
+model Notification {
+  id        String              @id @default(cuid())
+  userId    String
+  user      User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      String
+  title     String
+  body      String
+  channel   NotificationChannel @default(IN_APP)
+  isRead    Boolean             @default(false)
+  meta      Json?
+  createdAt DateTime            @default(now())
+
+  @@index([userId, isRead])
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  actorId    String?
+  actor      User?    @relation("AuditActor", fields: [actorId], references: [id])
+  action     String
+  entityType String
+  entityId   String?
+  summary    String?
+  metadata   Json?
+  ip         String?
+  createdAt  DateTime @default(now())
+
+  @@index([entityType, entityId])
+  @@index([createdAt])
+}
+
+model ContentPage {
+  id        String   @id @default(cuid())
+  slug      String   @unique
+  titleEn   String
+  titleBn   String
+  bodyEn    String   @db.Text
+  bodyBn    String   @db.Text
+  updatedAt DateTime @updatedAt
+}
+
+model ContactMessage {
+  id        String   @id @default(cuid())
+  name      String
+  email     String?
+  phone     String?
+  subject   String
+  message   String   @db.Text
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+model Document {
+  id        String       @id @default(cuid())
+  userId    String
+  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  kind      DocumentKind
+  fileName  String
+  mimeType  String
+  size      Int
+  path      String
+  createdAt DateTime     @default(now())
+
+  @@index([userId, kind])
+}
+
+model Plan {
+  id            String       @id @default(cuid())
+  code          String       @unique
+  nameEn        String
+  nameBn        String
+  descriptionEn String
+  descriptionBn String
+  priceBdt      Int
+  interval      PlanInterval
+  isActive      Boolean      @default(false)
+  isFuture      Boolean      @default(true)
+  features      Json
+  subscriptions Subscription[]
+}
+
+model Subscription {
+  id         String          @id @default(cuid())
+  employerId String
+  employer   EmployerProfile @relation(fields: [employerId], references: [id], onDelete: Cascade)
+  planId     String
+  plan       Plan            @relation(fields: [planId], references: [id])
+  status     String
+  startsAt   DateTime
+  endsAt     DateTime?
+  createdAt  DateTime        @default(now())
+}
+
+model Payment {
+  id        String        @id @default(cuid())
+  userId    String
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  amountBdt Int
+  purpose   String
+  gateway   String?
+  status    PaymentStatus @default(PENDING)
+  reference String?
+  meta      Json?
+  createdAt DateTime      @default(now())
+}

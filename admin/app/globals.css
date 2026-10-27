@@ -1,0 +1,95 @@
+@import "tailwindcss";
+
+@theme {
+  --color-ink: #10211c;
+  --color-forest: #0f6e56;
+  --color-gold: #e2a322;
+  --color-paper: #f5f7f6;
+  --color-line: #e2e9e5;
+  --color-muted: #5d675f;
+  --color-danger: #a32626;
+  --font-sans: Manrope, "Noto Sans Bengali", sans-serif;
+}
+
+body {
+  background: #f5f7f6;
+  color: #10211c;
+  font-family: Manrope, "Noto Sans Bengali", sans-serif;
+  -webkit-font-smoothing: antialiased;
+  line-height: 1.65;
+}
+
+@layer components {
+  .btn {
+    @apply inline-flex items-center justify-center rounded-lg px-3 py-2 text-sm font-semibold;
+  }
+  .btn-ink {
+    @apply inline-flex items-center justify-center rounded-lg px-3 py-2 text-sm font-semibold bg-ink text-white;
+  }
+  .btn-line {
+    @apply inline-flex items-center justify-center rounded-lg px-3 py-2 text-sm font-semibold border border-line bg-white;
+  }
+  .btn-gold {
+    @apply inline-flex items-center justify-center rounded-lg px-3 py-2 text-sm font-semibold bg-gold text-ink;
+  }
+  .field {
+    @apply h-10 w-full rounded-lg border border-line bg-white px-3 text-sm outline-none focus:border-forest;
+  }
+  .area {
+    @apply min-h-28 w-full rounded-lg border border-line bg-white px-3 py-2 text-sm outline-none focus:border-forest;
+  }
+  .panel {
+    @apply rounded-2xl border border-line bg-white;
+  }
+}
+
+@layer base {
+  button, a, input, select, textarea { -webkit-tap-highlight-color: transparent; }
+  button:not(:disabled), select { cursor: pointer; }
+  :focus-visible { outline: 3px solid #0f6e56; outline-offset: 4px; }
+  input:focus-visible, select:focus-visible, textarea:focus-visible {
+    outline: 3px solid #0f6e5626; outline-offset: 1px;
+  }
+  h1, h2, h3 { text-wrap: balance; }
+}
+
+@layer components {
+  .btn, .btn-ink, .btn-line, .btn-gold {
+    min-height: 44px;
+    transition: background-color .2s, border-color .2s, box-shadow .2s, transform .2s;
+  }
+  .btn-ink:hover { background-color: #0f6e56; box-shadow: 0 5px 14px #0f6e5620; }
+  .btn-gold:hover { background-color: #efb63d; box-shadow: 0 5px 14px #e2a32225; }
+  .btn-line:hover { border-color: #0f6e56; background-color: #f1f8f4; }
+  .btn:disabled, .btn-ink:disabled, .btn-line:disabled, .btn-gold:disabled { cursor: not-allowed; opacity: .55; }
+  .field, .area { transition: border-color .2s, box-shadow .2s; }
+  .field:hover, .area:hover { border-color: #b7c9bf; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { scroll-behavior: auto !important; transition: none !important; animation: none !important; }
+}
+
+@layer components {
+  .panel { box-shadow: 0 3px 16px -8px #183e2720; }
+  .field { min-height: 44px; }
+  .admin-nav { display: flex; align-items: center; gap: 12px; border: 1px solid transparent; border-radius: 12px; padding: 10px 12px; font-size: 14px; font-weight: 600; color: #ffffffa6; transition: background .2s, color .2s; }
+  .admin-nav:hover { background: #ffffff0a; color: white; }
+  .admin-nav[aria-current="page"] { background: #ffffff10; border-color: #ffffff12; color: #f2c96d; }
+  .stat-card { position: relative; overflow: hidden; padding: 24px; }
+  .stat-card::after { content: ""; position: absolute; top: 0; left: 24px; right: 24px; height: 3px; background: #0f6e56; border-radius: 0 0 4px 4px; opacity: .6; }
+}
+
+@layer components {
+  .panel { border-color: #dfe7e2; box-shadow: 0 4px 24px -16px #183e2730; }
+  .field, .area { transition: border-color .2s, box-shadow .2s; }
+  .field:focus, .area:focus { box-shadow: 0 0 0 4px #0f6e560c; }
+  .admin-nav { min-height: 46px; }
+  .admin-nav[aria-current="page"] { background: #e2a32214; border-color: #e2a32225; }
+  .stat-card { background: linear-gradient(140deg, #fff, #f6faf7); }
+  .stat-card::after { height: 4px; opacity: 1; }
+}
+
+thead th { white-space: nowrap; }
+tbody tr:nth-child(even) { background-color: #f7f9f780; }
+button:disabled { cursor: not-allowed; opacity: .55; }
